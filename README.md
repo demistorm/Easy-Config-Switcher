@@ -1,6 +1,8 @@
 # Easy Config Switcher
 A simple tool to backup and switch between config profiles!
 
+Works particularily well for performance presets or resourcepack styles.
+
 ### Creating Presets:
 1. Have all Minecraft options/shaders/resourcepacks/mod settings
 configured to your liking. 
