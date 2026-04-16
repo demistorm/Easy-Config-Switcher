@@ -1,0 +1,103 @@
+// NeoForge module build configuration for EasyConfigSwitcher
+// This module contains NeoForge-specific implementations and runtime dependencies
+// All common config switching logic is in the common module - this just handles NeoForge integration
+
+plugins {
+    // Shadow plugin for bundling common module
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+// Configure Architectury for this NeoForge module
+architectury {
+    platformSetupLoomIde()
+    neoForge()
+}
+
+// Set loader-specific archive name for better organization
+archivesBaseName = rootProject.archives_base_name + "-neoforge"
+
+configurations {
+    // Common module configuration
+    common
+    shadowCommon
+
+    // Build configuration inheritance
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentNeoForge.extendsFrom common
+}
+
+repositories {
+    maven {
+        name = 'NeoForged'
+        url = 'https://maven.neoforged.net/releases'
+    }
+}
+
+dependencies {
+    // Core NeoForge dependency
+    neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"
+
+    // Include the common module with all shared logic
+    common(project(path: ':common', configuration: 'namedElements')) { transitive false }
+    shadowCommon(project(path: ':common', configuration: 'transformProductionNeoForge')) { transitive false }
+}
+
+// Process resources and expand version placeholders
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", rootProject.minecraft_version
+    inputs.property "neoforge_version", rootProject.neoforge_version
+
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand "version": inputs.properties.version,
+                "minecraft_version": inputs.properties.minecraft_version,
+                "neoforge_version": inputs.properties.neoforge_version
+    }
+}
+
+// Configure shadow JAR for including common module
+shadowJar {
+    configurations = [project.configurations.shadowCommon]
+    archiveClassifier = "dev-shadow"
+}
+
+// Remap shadow JAR to proper NeoForge format
+remapJar {
+    input.set shadowJar.archiveFile
+    dependsOn shadowJar
+    archiveClassifier = null
+}
+
+// Configure regular JAR for development
+jar {
+    archiveClassifier = "dev"
+}
+
+// Configure sources JAR to include common module sources
+sourcesJar {
+    def commonSources = project(":common").sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.map { zipTree(it) }
+}
+
+// Configure Java components for publishing
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+// Publishing configuration for NeoForge builds
+publishing {
+    publications {
+        mavenNeoForge(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            from components.java
+        }
+    }
+
+    repositories {
+        // Add repositories to publish to here
+    }
+}

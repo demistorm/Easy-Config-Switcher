@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "easyconfigswitcher",
+  "version": "${version}",
+  "name": "Easy Config Switcher",
+  "description": "Example description",
+  "authors": [
+    "Halfstorm"
+  ],
+  "contact": {
+    "homepage": ""
+  },
+  "license": "GPL-3.0",
+  "icon": "ecs_icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "win.demistorm.easyconfigswitcher.fabric.EasyConfigSwitcherFabric"
+    ],
+    "client": [
+      "win.demistorm.easyconfigswitcher.fabric.client.FabricClientSetup"
+    ],
+    "modmenu": [
+      "win.demistorm.easyconfigswitcher.fabric.client.FabricClientSetup$ModMenuConfigScreen"
+    ]
+  },
+  "mixins": [
+    "easyconfigswitcher.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "minecraft": ">=${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

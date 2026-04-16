@@ -1,0 +1,120 @@
+// Fabric module build configuration for EasyConfigSwitcher
+// This module contains Fabric-specific implementations and runtime dependencies
+// All common config switching logic is in the common module - this just handles Fabric integration
+
+plugins {
+    // Shadow plugin for bundling common module
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+// Configure Architectury for this Fabric module
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+// Set loader-specific archive name for better organization
+archivesBaseName = rootProject.archives_base_name + "-fabric"
+
+// Loom configuration for the Fabric module
+loom {
+    // Access widener
+    def aw = project(":common").file("src/main/resources/easyconfigswitcher.accesswidener")
+    if (aw.exists()) {
+        accessWidenerPath.set(aw)
+    }
+}
+
+configurations {
+    // Common module configuration
+    common
+    shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this
+
+    // Build configuration inheritance
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentFabric.extendsFrom common
+}
+
+sourceSets {
+    main {
+        compileClasspath += sourceSets.main.compileClasspath
+    }
+}
+
+dependencies {
+    // Core Fabric dependencies
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modApi "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+
+    // Include the common module with all our shared logic
+    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+
+    // Mod Menu integration for Fabric users
+    modCompileOnly "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
+}
+
+// Process resources and expand version placeholders
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", rootProject.minecraft_version
+    inputs.property "fabric_loader_version", rootProject.fabric_loader_version
+
+    filesMatching("fabric.mod.json") {
+        // Use simple text replacement instead of expand to avoid $ escaping issues
+        filter { line ->
+            line
+                .replace('${version}', project.version.toString())
+                .replace('${minecraft_version}', rootProject.minecraft_version.toString())
+                .replace('${fabric_loader_version}', rootProject.fabric_loader_version.toString())
+        }
+    }
+}
+
+// Configure shadow JAR for including common module
+shadowJar {
+    exclude "architectury.common.json"
+    configurations = [project.configurations.shadowCommon]
+    archiveClassifier = "dev-shadow"
+}
+
+// Remap shadow JAR to proper Fabric format
+remapJar {
+    input.set shadowJar.archiveFile
+    dependsOn shadowJar
+    archiveClassifier = null
+}
+
+// Configure regular JAR for development
+jar {
+    archiveClassifier = "dev"
+}
+
+// Configure sources JAR to include common module sources
+sourcesJar {
+    def commonSources = project(":common").sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.map { zipTree(it) }
+}
+
+// Configure Java components for publishing
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+// Publishing configuration for Fabric builds
+publishing {
+    publications {
+        mavenFabric(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            from components.java
+        }
+    }
+
+    repositories {
+        // Add repositories to publish to here
+    }
+}

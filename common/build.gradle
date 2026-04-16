@@ -1,0 +1,50 @@
+// Common module build configuration for EasyConfigSwitcher
+// This module contains all the shared logic that works across Fabric and NeoForge
+// All config switching mechanics go here - only platform-specific code in loader modules
+
+// Configure Architectury for this common module
+// This tells Architectury which loaders we're building for
+architectury {
+    common(rootProject.enabled_platforms.split(","))
+}
+
+// Loom configuration for the common module
+loom {
+    // Access widener
+    def aw = file("src/main/resources/easyconfigswitcher.accesswidener")
+    if (aw.exists()) {
+        accessWidenerPath.set(aw)
+    }
+}
+
+dependencies {
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+}
+
+// Publishing configuration for the common module
+publishing {
+    publications {
+        mavenCommon(MavenPublication) {
+            artifactId = rootProject.archives_base_name
+            from components.java
+        }
+    }
+
+    // Configure repositories for publishing (if needed in future)
+    repositories {
+        // Add repositories to publish to here
+    }
+}
+
+// Java configuration for the common module
+java {
+    // Ensure consistent Java version across all platforms
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+// Additional Java compile options
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release = 21
+}
