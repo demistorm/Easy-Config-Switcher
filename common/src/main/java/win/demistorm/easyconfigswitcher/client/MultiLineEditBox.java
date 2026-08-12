@@ -40,7 +40,7 @@ public class MultiLineEditBox extends EditBox {
     private final int maxLength;
     private Component hint;
 
-    // Cached GLFW standard cursors (1.21.1 has no GuiGraphics cursor API, so we manage them directly)
+    // Cached GLFW standard cursors
     private static long ibeamCursor = -1L;
     private static long arrowCursor = -1L;
     private static long notAllowedCursor = -1L;
