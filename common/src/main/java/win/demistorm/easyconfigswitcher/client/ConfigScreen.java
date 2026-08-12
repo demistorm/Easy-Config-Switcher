@@ -68,6 +68,8 @@ public final class ConfigScreen {
             int listTopY = topY + 45;
             int listBottom = height - 50;
             presetList = new PresetListWidget(client, width, listTopY, listBottom);
+            presetList.setRenderTopAndBottom(false);
+            presetList.setRenderBackground(false);
             presetList.updateEntries();
             addWidget(presetList);
 
@@ -129,6 +131,7 @@ public final class ConfigScreen {
 
         @Override
         public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+            renderBackground(context);
             super.render(context, mouseX, mouseY, delta);
 
             context.drawCenteredString(font, title, width / 2, 15, 0xFFFFFFFF);
@@ -147,7 +150,11 @@ public final class ConfigScreen {
         private class PresetListWidget extends ObjectSelectionList<PresetListWidget.PresetEntry> {
 
             public PresetListWidget(Minecraft client, int width, int y, int bottom) {
-                super(client, width, bottom - y, y, ENTRY_HEIGHT + 4);
+                super(client, width, bottom - y, y, bottom, ENTRY_HEIGHT + 4);
+            }
+
+            public int getY() {
+                return this.y0;
             }
 
             public void updateEntries() {

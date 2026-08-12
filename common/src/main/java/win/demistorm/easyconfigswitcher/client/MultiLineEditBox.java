@@ -1,5 +1,6 @@
 package win.demistorm.easyconfigswitcher.client;
 
+import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -10,7 +11,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.StringUtil;
 import org.lwjgl.glfw.GLFW;
 
 public class MultiLineEditBox extends EditBox {
@@ -122,9 +122,7 @@ public class MultiLineEditBox extends EditBox {
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (!isVisible()) return;
 
-        if (isBordered()) {
-            renderBackground(guiGraphics);
-        }
+        renderBackground(guiGraphics);
 
         java.util.List<String> lines = getLines();
 
@@ -312,7 +310,7 @@ public class MultiLineEditBox extends EditBox {
             return false;
         }
 
-        if (StringUtil.isAllowedChatCharacter(codePoint) && canConsumeInputImpl()) {
+        if (SharedConstants.isAllowedChatCharacter(codePoint) && canConsumeInputImpl()) {
             insertChar(Character.toString(codePoint));
             return true;
         }
@@ -372,12 +370,12 @@ public class MultiLineEditBox extends EditBox {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         if (!isMouseOver(mouseX, mouseY)) {
             return false;
         }
 
-        int delta = verticalAmount > 0 ? -1 : 1;
+        int delta = amount > 0 ? -1 : 1;
         int newOffset = scrollOffset + delta;
 
         java.util.List<String> lines = getLines();
