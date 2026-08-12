@@ -62,10 +62,10 @@ subprojects {
         modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     }
 
-    // Ensure all Java compilation uses UTF-8 encoding and Java 21
+    // Ensure all Java compilation uses UTF-8 encoding and Java 17
     tasks.withType(JavaCompile).configureEach {
         options.encoding = "UTF-8"
-        options.release = 21
+        options.release = 17
     }
 
     // Generate sources JAR for all subprojects (helpful for debugging)
@@ -90,7 +90,7 @@ allprojects {
     // Consistent Java compilation settings
     tasks.withType(JavaCompile).configureEach {
         options.encoding = "UTF-8"
-        options.release = 21
+        options.release = 17
     }
 
     // Generate sources for all projects
