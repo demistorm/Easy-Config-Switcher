@@ -97,6 +97,8 @@ public class TooltipEditScreen extends Screen {
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, 0xC0000000);
 
+        super.render(context, mouseX, mouseY, delta);
+
         String title = "Edit Tooltip: " + preset.getName();
         context.drawCenteredString(font, title, width / 2, height / 2 - EDITBOX_HEIGHT / 2 - 24, 0xFFFFFFFF);
 
@@ -110,8 +112,6 @@ public class TooltipEditScreen extends Screen {
                 width / 2 + EDITBOX_WIDTH / 2 - font.width(countText),
                 height / 2 + EDITBOX_HEIGHT / 2 + 4,
                 countColor);
-
-        super.render(context, mouseX, mouseY, delta);
     }
 
     @Override
