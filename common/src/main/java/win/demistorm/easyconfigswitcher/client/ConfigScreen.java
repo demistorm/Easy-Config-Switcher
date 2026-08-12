@@ -129,6 +129,8 @@ public final class ConfigScreen {
 
         @Override
         public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+            super.render(context, mouseX, mouseY, delta);
+
             context.drawCenteredString(font, title, width / 2, 15, 0xFFFFFFFF);
 
             context.drawString(font, "Create New Preset:", width / 2 - 150, 35, 0xFFAAAAAA);
@@ -140,8 +142,6 @@ public final class ConfigScreen {
                         width / 2 - 200, presetList.getY() - 15, 0xFFFFFFFF);
                 presetList.render(context, mouseX, mouseY, delta);
             }
-
-            super.render(context, mouseX, mouseY, delta);
         }
 
         private class PresetListWidget extends ObjectSelectionList<PresetListWidget.PresetEntry> {
