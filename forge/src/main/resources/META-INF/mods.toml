@@ -1,0 +1,34 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "GPL-3.0"
+
+[[mods]]
+modId = "easyconfigswitcher"
+version = "${version}"
+displayName = "Easy Config Switcher"
+authors = "Halfstorm"
+description = '''
+A simple tool to backup and switch between config profiles!
+
+Support me on Ko-Fi: https://ko-fi.com/hstorm
+
+Discord: https://discord.gg/7uttzPbTGq
+'''
+logoFile = "ecs_icon.png"
+
+[[dependencies.easyconfigswitcher]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.easyconfigswitcher]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[mixins]]
+config = "easyconfigswitcher.mixins.json"

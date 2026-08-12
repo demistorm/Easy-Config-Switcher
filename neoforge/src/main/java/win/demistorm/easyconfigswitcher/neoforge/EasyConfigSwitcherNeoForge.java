@@ -11,7 +11,7 @@ public final class EasyConfigSwitcherNeoForge {
     public EasyConfigSwitcherNeoForge(IEventBus modEventBus) {
         EasyConfigSwitcher.initialize();
 
-        if (FMLEnvironment.getDist().isClient()) {
+        if (FMLEnvironment.dist.isClient()) {
             NeoForgeClientSetup.register(modEventBus);
         }
     }

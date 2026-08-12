@@ -1,16 +1,17 @@
 package win.demistorm.easyconfigswitcher.client;
 
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.StringUtil;
+import org.lwjgl.glfw.GLFW;
 
 public class MultiLineEditBox extends EditBox {
     private static final int LINE_HEIGHT = 20;
@@ -29,11 +30,45 @@ public class MultiLineEditBox extends EditBox {
     private int dragAnchorLine = 0;
     private int dragAnchorColumn = 0;
 
+    private long lastClickTime = -1L;
+    private int lastClickButton = -1;
+    private boolean pendingDoubleClick = false;
+
     private final int maxLines;
     private final int visibleLines;
     private final Font font;
     private final int maxLength;
     private Component hint;
+
+    // Cached GLFW standard cursors (1.21.1 has no GuiGraphics cursor API, so we manage them directly)
+    private static long ibeamCursor = -1L;
+    private static long arrowCursor = -1L;
+    private static long notAllowedCursor = -1L;
+
+    private static long ibeamCursor() {
+        if (ibeamCursor == -1L) {
+            ibeamCursor = GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR);
+        }
+        return ibeamCursor;
+    }
+
+    private static long arrowCursor() {
+        if (arrowCursor == -1L) {
+            arrowCursor = GLFW.glfwCreateStandardCursor(GLFW.GLFW_ARROW_CURSOR);
+        }
+        return arrowCursor;
+    }
+
+    private static long notAllowedCursor() {
+        if (notAllowedCursor == -1L) {
+            notAllowedCursor = GLFW.glfwCreateStandardCursor(GLFW.GLFW_NOT_ALLOWED_CURSOR);
+        }
+        return notAllowedCursor;
+    }
+
+    public static void resetCursor() {
+        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), arrowCursor());
+    }
 
     public MultiLineEditBox(Font font, int x, int y, int width, int height, Component component, int maxLines, int maxLength) {
         super(font, x, y, width, height, component);
@@ -121,7 +156,7 @@ public class MultiLineEditBox extends EditBox {
                 int xTo   = textX + font.width(lineText.substring(0, Math.min(colTo,   lineText.length())));
 
                 if (xTo == xFrom) xTo = xFrom + 2;
-                guiGraphics.textHighlight(xFrom, lineY - 1, xTo, lineY + LINE_HEIGHT - 2, true);
+                guiGraphics.fill(RenderType.guiTextHighlight(), xFrom, lineY - 1, xTo, lineY + LINE_HEIGHT - 2, -16776961);
             }
         }
 
@@ -150,14 +185,17 @@ public class MultiLineEditBox extends EditBox {
             }
         }
 
-        if (lines.isEmpty() || (lines.size() == 1 && lines.getFirst().isEmpty())) {
+        if (lines.isEmpty() || (lines.size() == 1 && lines.get(0).isEmpty())) {
             if (hint != null && !isFocused()) {
                 guiGraphics.drawString(font, hint, getX() + 4, getY() + 4, DEFAULT_TEXT_COLOR, true);
             }
         }
 
+        long window = Minecraft.getInstance().getWindow().getWindow();
         if (isHovered()) {
-            guiGraphics.requestCursor(canConsumeInputImpl() ? CursorTypes.IBEAM : CursorTypes.NOT_ALLOWED);
+            GLFW.glfwSetCursor(window, canConsumeInputImpl() ? ibeamCursor() : notAllowedCursor());
+        } else {
+            GLFW.glfwSetCursor(window, arrowCursor());
         }
     }
 
@@ -183,12 +221,24 @@ public class MultiLineEditBox extends EditBox {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent keyEvent) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        long now = Util.getMillis();
+        pendingDoubleClick = lastClickButton == button && now - lastClickTime < 250L;
+        boolean result = super.mouseClicked(mouseX, mouseY, button);
+        if (result) {
+            lastClickTime = now;
+            lastClickButton = button;
+        }
+        return result;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (!canConsumeInputImpl()) {
             return false;
         }
 
-        switch (keyEvent.key()) {
+        switch (keyCode) {
             case 257:
             case 335:
                 if (canConsumeInputImpl()) {
@@ -235,15 +285,15 @@ public class MultiLineEditBox extends EditBox {
                 return true;
 
             default:
-                if (keyEvent.isCopy()) {
+                if (Screen.isCopy(keyCode)) {
                     copyHighlighted();
                     return true;
-                } else if (keyEvent.isPaste()) {
+                } else if (Screen.isPaste(keyCode)) {
                     if (canConsumeInputImpl()) {
                         pasteText();
                     }
                     return true;
-                } else if (keyEvent.isCut()) {
+                } else if (Screen.isCut(keyCode)) {
                     copyHighlighted();
                     if (canConsumeInputImpl()) {
                         deleteHighlighted();
@@ -257,13 +307,13 @@ public class MultiLineEditBox extends EditBox {
     }
 
     @Override
-    public boolean charTyped(CharacterEvent characterEvent) {
+    public boolean charTyped(char codePoint, int modifiers) {
         if (!canConsumeInputImpl()) {
             return false;
         }
 
-        if (characterEvent.isAllowedChatCharacter() && canConsumeInputImpl()) {
-            insertChar(characterEvent.codepointAsString());
+        if (StringUtil.isAllowedChatCharacter(codePoint) && canConsumeInputImpl()) {
+            insertChar(Character.toString(codePoint));
             return true;
         }
 
@@ -271,9 +321,9 @@ public class MultiLineEditBox extends EditBox {
     }
 
     @Override
-    public void onClick(MouseButtonEvent mouseButtonEvent, boolean doubleClick) {
-        int clickX = (int) mouseButtonEvent.x() - getX();
-        int clickY = (int) mouseButtonEvent.y() - getY();
+    public void onClick(double mouseX, double mouseY) {
+        int clickX = (int) mouseX - getX();
+        int clickY = (int) mouseY - getY();
 
         int clickedLine = scrollOffset + Math.max(0, (clickY - 4) / LINE_HEIGHT);
 
@@ -287,7 +337,7 @@ public class MultiLineEditBox extends EditBox {
         dragAnchorColumn = cursorColumn;
         isDragging = true;
 
-        if (!doubleClick) {
+        if (!pendingDoubleClick) {
             resetHighlight();
         }
 
@@ -296,11 +346,11 @@ public class MultiLineEditBox extends EditBox {
     }
 
     @Override
-    protected void onDrag(MouseButtonEvent mouseButtonEvent, double dragX, double dragY) {
+    protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
         if (!isDragging || !isFocused()) return;
 
-        int relX = (int) mouseButtonEvent.x() - getX();
-        int relY = (int) mouseButtonEvent.y() - getY();
+        int relX = (int) mouseX - getX();
+        int relY = (int) mouseY - getY();
 
         java.util.List<String> lines = getLines();
         int hoveredLine = Math.max(0, Math.min(
@@ -317,7 +367,7 @@ public class MultiLineEditBox extends EditBox {
     }
 
     @Override
-    public void onRelease(MouseButtonEvent mouseButtonEvent) {
+    public void onRelease(double mouseX, double mouseY) {
         isDragging = false;
     }
 

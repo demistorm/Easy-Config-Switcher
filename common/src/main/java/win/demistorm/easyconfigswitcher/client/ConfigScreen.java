@@ -8,8 +8,6 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import win.demistorm.easyconfigswitcher.EasyConfigSwitcher;
 import win.demistorm.easyconfigswitcher.PresetManager;
@@ -17,6 +15,7 @@ import win.demistorm.easyconfigswitcher.config.ModConfig;
 import win.demistorm.easyconfigswitcher.config.Preset;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class ConfigScreen {
@@ -114,18 +113,18 @@ public final class ConfigScreen {
         }
 
         @Override
-        public boolean keyPressed(KeyEvent keyEvent) {
-            if (newPresetNameEdit.isFocused() && (keyEvent.key() == 257 || keyEvent.key() == 335)) {
+        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+            if (newPresetNameEdit.isFocused() && (keyCode == 257 || keyCode == 335)) {
                 createNewPreset();
                 return true;
             }
-            if (titleLabelEdit.isFocused() && (keyEvent.key() == 257 || keyEvent.key() == 335)) {
+            if (titleLabelEdit.isFocused() && (keyCode == 257 || keyCode == 335)) {
                 ModConfig.setTitleLabel(titleLabelEdit.getValue().trim());
                 ModConfig.save();
                 client.setScreen(parent);
                 return true;
             }
-            return super.keyPressed(keyEvent);
+            return super.keyPressed(keyCode, scanCode, modifiers);
         }
 
         @Override
@@ -163,12 +162,12 @@ public final class ConfigScreen {
                 return 400;
             }
 
-            public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
-                if (!isMouseOver(mouseButtonEvent.x(), mouseButtonEvent.y())) return false;
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                if (!isMouseOver(mouseX, mouseY)) return false;
                 for (PresetEntry entry : children()) {
-                    if (entry.mouseClicked(mouseButtonEvent, bl)) return true;
+                    if (entry.mouseClicked(mouseX, mouseY, button)) return true;
                 }
-                return super.mouseClicked(mouseButtonEvent, bl);
+                return super.mouseClicked(mouseX, mouseY, button);
             }
 
             public class PresetEntry extends ObjectSelectionList.Entry<PresetEntry> {
@@ -230,15 +229,15 @@ public final class ConfigScreen {
                 }
 
                 private void moveEntry(int direction) {
-                    List<PresetEntry> entries = new ArrayList<>(children());
+                    List<PresetEntry> entries = new ArrayList<>(PresetListWidget.this.children());
                     int currentIndex = entries.indexOf(this);
                     int newIndex = currentIndex + direction;
 
                     if (newIndex >= 0 && newIndex < entries.size()) {
-                        PresetListWidget.this.swap(currentIndex, newIndex);
+                        Collections.swap(PresetListWidget.this.children(), currentIndex, newIndex);
 
                         List<String> newOrder = new ArrayList<>();
-                        for (PresetEntry entry : children()) {
+                        for (PresetEntry entry : PresetListWidget.this.children()) {
                             newOrder.add(entry.preset.getName());
                         }
                         PresetManager.reorderPresets(newOrder);
@@ -246,15 +245,15 @@ public final class ConfigScreen {
                 }
 
                 @Override
-                public void renderContent(GuiGraphics context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-                    int x = getX();
-                    int y = getY();
-                    int entryWidth = getWidth();
-                    int entryHeight = getHeight();
+                public void render(GuiGraphics context, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+                    int x = left;
+                    int y = top;
+                    int entryWidth = width;
+                    int entryHeight = height;
 
                     context.fill(x, y, x + entryWidth, y + entryHeight - 2, 0x80000000);
 
-                    List<PresetEntry> entries = children();
+                    List<PresetEntry> entries = PresetListWidget.this.children();
                     int currentIndex = entries.indexOf(this);
 
                     int buttonX = x + 5;
@@ -292,12 +291,12 @@ public final class ConfigScreen {
                 }
 
                 @Override
-                public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
-                    if (moveUpButton.mouseClicked(mouseButtonEvent, bl)) return true;
-                    if (moveDownButton.mouseClicked(mouseButtonEvent, bl)) return true;
-                    if (editTooltipButton.mouseClicked(mouseButtonEvent, bl)) return true;
-                    if (applyAndRestartButton.mouseClicked(mouseButtonEvent, bl)) return true;
-                    return deleteButton.mouseClicked(mouseButtonEvent, bl);
+                public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                    if (moveUpButton.mouseClicked(mouseX, mouseY, button)) return true;
+                    if (moveDownButton.mouseClicked(mouseX, mouseY, button)) return true;
+                    if (editTooltipButton.mouseClicked(mouseX, mouseY, button)) return true;
+                    if (applyAndRestartButton.mouseClicked(mouseX, mouseY, button)) return true;
+                    return deleteButton.mouseClicked(mouseX, mouseY, button);
                 }
 
                 @Override
