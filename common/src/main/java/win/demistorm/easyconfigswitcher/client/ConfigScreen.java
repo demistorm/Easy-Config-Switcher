@@ -2,7 +2,7 @@ package win.demistorm.easyconfigswitcher.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -129,20 +129,20 @@ public final class ConfigScreen {
         }
 
         @Override
-        public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-            context.drawCenteredString(font, title, width / 2, 15, 0xFFFFFFFF);
+        public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+            context.centeredText(font, title, width / 2, 15, 0xFFFFFFFF);
 
-            context.drawString(font, "Create New Preset:", width / 2 - 150, 35, 0xFFAAAAAA);
+            context.text(font, "Create New Preset:", width / 2 - 150, 35, 0xFFAAAAAA);
 
-            context.drawString(font, "Title Screen Label:", width / 2 - 200, height - 42, 0xFFAAAAAA);
+            context.text(font, "Title Screen Label:", width / 2 - 200, height - 42, 0xFFAAAAAA);
 
             if (presetList != null) {
-                context.drawString(font, "Presets (" + presetList.children().size() + "/" + PresetManager.getMaxPresets() + ")",
+                context.text(font, "Presets (" + presetList.children().size() + "/" + PresetManager.getMaxPresets() + ")",
                         width / 2 - 200, presetList.getY() - 15, 0xFFFFFFFF);
-                presetList.render(context, mouseX, mouseY, delta);
+                presetList.extractRenderState(context, mouseX, mouseY, delta);
             }
 
-            super.render(context, mouseX, mouseY, delta);
+            super.extractRenderState(context, mouseX, mouseY, delta);
         }
 
         private class PresetListWidget extends ObjectSelectionList<PresetListWidget.PresetEntry> {
@@ -246,7 +246,7 @@ public final class ConfigScreen {
                 }
 
                 @Override
-                public void renderContent(GuiGraphics context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+                public void extractContent(GuiGraphicsExtractor context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
                     int x = getX();
                     int y = getY();
                     int entryWidth = getWidth();
@@ -262,11 +262,11 @@ public final class ConfigScreen {
 
                     moveUpButton.setPosition(buttonX, buttonY);
                     moveUpButton.active = currentIndex > 0;
-                    moveUpButton.render(context, mouseX, mouseY, tickDelta);
+                    moveUpButton.extractRenderState(context, mouseX, mouseY, tickDelta);
 
                     moveDownButton.setPosition(buttonX + 22, buttonY);
                     moveDownButton.active = currentIndex < entries.size() - 1;
-                    moveDownButton.render(context, mouseX, mouseY, tickDelta);
+                    moveDownButton.extractRenderState(context, mouseX, mouseY, tickDelta);
 
                     boolean isCurrent = preset.getName().equals(ModConfig.getCurrentPreset());
                     int nameColor = isCurrent ? 0xFF55FF55 : 0xFFFFFFFF;
@@ -274,21 +274,21 @@ public final class ConfigScreen {
                     if (isCurrent) {
                         displayName += " ✓";
                     }
-                    context.drawString(font, displayName, x + 55, y + (entryHeight - 9) / 2, nameColor);
+                    context.text(font, displayName, x + 55, y + (entryHeight - 9) / 2, nameColor);
 
                     int rightButtonY = y + (entryHeight - WIDGET_HEIGHT) / 2;
 
                     int deleteX = x + entryWidth - 65;
                     deleteButton.setPosition(deleteX, rightButtonY);
-                    deleteButton.render(context, mouseX, mouseY, tickDelta);
+                    deleteButton.extractRenderState(context, mouseX, mouseY, tickDelta);
 
                     int restartX = deleteX - 105;
                     applyAndRestartButton.setPosition(restartX, rightButtonY);
-                    applyAndRestartButton.render(context, mouseX, mouseY, tickDelta);
+                    applyAndRestartButton.extractRenderState(context, mouseX, mouseY, tickDelta);
 
                     int tooltipX = restartX - 55;
                     editTooltipButton.setPosition(tooltipX, rightButtonY);
-                    editTooltipButton.render(context, mouseX, mouseY, tickDelta);
+                    editTooltipButton.extractRenderState(context, mouseX, mouseY, tickDelta);
                 }
 
                 @Override

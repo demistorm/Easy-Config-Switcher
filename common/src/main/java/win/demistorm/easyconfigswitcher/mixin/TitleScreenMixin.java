@@ -2,7 +2,7 @@ package win.demistorm.easyconfigswitcher.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -123,29 +123,29 @@ public abstract class TitleScreenMixin {
         }
     }
 
-    @Inject(method = "render", at = @At("HEAD"))
+    @Inject(method = "extractRenderState", at = @At("HEAD"))
     private void ecs$onTick(CallbackInfo ci) {
         for (PresetButtonWidget widget : ecs$presetButtons) {
             widget.tick();
         }
     }
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void ecs$renderLabel(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void ecs$renderLabel(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
-    private void ecs$renderButtonsOnTop(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("RETURN"))
+    private void ecs$renderButtonsOnTop(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (!ecs$presetButtons.isEmpty() && !ecs$buttonsAtTop) {
             Font font = Minecraft.getInstance().font;
             Component label = Component.literal(ModConfig.getTitleLabel());
             int labelWidth = font.width(label);
             int labelX = ((Screen) (Object) this).width / 2 - labelWidth / 2;
-            guiGraphics.drawString(font, label, labelX, ecs$labelY, 0xFFFFFFFF);
+            guiGraphics.text(font, label, labelX, ecs$labelY, 0xFFFFFFFF);
         }
 
         for (PresetButtonWidget widget : ecs$presetButtons) {
-            widget.getButton().render(guiGraphics, mouseX, mouseY, partialTick);
+            widget.getButton().extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         Minecraft mc = Minecraft.getInstance();
