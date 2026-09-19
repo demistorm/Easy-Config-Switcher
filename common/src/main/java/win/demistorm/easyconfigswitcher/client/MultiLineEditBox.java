@@ -3,7 +3,7 @@ package win.demistorm.easyconfigswitcher.client;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -84,7 +84,7 @@ public class MultiLineEditBox extends EditBox {
     }
 
     @Override
-    public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (!isVisible()) return;
 
         if (isBordered()) {
@@ -132,7 +132,7 @@ public class MultiLineEditBox extends EditBox {
 
             if (!lineText.isEmpty()) {
                 FormattedCharSequence seq = FormattedCharSequence.forward(lineText, Style.EMPTY);
-                guiGraphics.drawString(font, seq, textX, lineY, textColor, shadow);
+                guiGraphics.text(font, seq, textX, lineY, textColor, shadow);
             }
 
             if (i == cursorLine && isFocused() && canConsumeInputImpl()) {
@@ -152,7 +152,7 @@ public class MultiLineEditBox extends EditBox {
 
         if (lines.isEmpty() || (lines.size() == 1 && lines.getFirst().isEmpty())) {
             if (hint != null && !isFocused()) {
-                guiGraphics.drawString(font, hint, getX() + 4, getY() + 4, DEFAULT_TEXT_COLOR, true);
+                guiGraphics.text(font, hint, getX() + 4, getY() + 4, DEFAULT_TEXT_COLOR, true);
             }
         }
 
@@ -161,16 +161,16 @@ public class MultiLineEditBox extends EditBox {
         }
     }
 
-    private void renderBackground(GuiGraphics guiGraphics) {
+    private void renderBackground(GuiGraphicsExtractor guiGraphics) {
         int borderColor = isFocused() ? 0xFFFFFFFF : 0xFFA0A0A0;
         int bgColor = 0xFF000000;
 
         guiGraphics.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), bgColor);
 
-        guiGraphics.hLine(getX(), getX() + getWidth() - 1, getY(), borderColor);
-        guiGraphics.hLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, borderColor);
-        guiGraphics.vLine(getX(), getY(), getY() + getHeight() - 1, borderColor);
-        guiGraphics.vLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, borderColor);
+        guiGraphics.horizontalLine(getX(), getX() + getWidth() - 1, getY(), borderColor);
+        guiGraphics.horizontalLine(getX(), getX() + getWidth() - 1, getY() + getHeight() - 1, borderColor);
+        guiGraphics.verticalLine(getX(), getY(), getY() + getHeight() - 1, borderColor);
+        guiGraphics.verticalLine(getX() + getWidth() - 1, getY(), getY() + getHeight() - 1, borderColor);
     }
 
     private boolean hasHighlight() {
