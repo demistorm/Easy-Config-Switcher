@@ -67,7 +67,7 @@ public class TooltipEditScreen extends Screen {
 
         Button cancelButton = Button.builder(
                         Component.literal("Cancel"),
-                        btn -> client.setScreen(parent))
+                        btn -> client.gui.setScreen(parent))
                 .bounds(centerX + 5, editY + EDITBOX_HEIGHT + 15, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .tooltip(Tooltip.create(Component.literal("Cancel without saving")))
                 .build();
@@ -91,7 +91,7 @@ public class TooltipEditScreen extends Screen {
                 preset.getName(),
                 preset.getDescription() != null ? preset.getDescription() : "[default]");
 
-        client.setScreen(parent);
+        client.gui.setScreen(parent);
     }
 
     @Override
@@ -118,7 +118,7 @@ public class TooltipEditScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (keyEvent.key() == 256) {
-            client.setScreen(parent);
+            client.gui.setScreen(parent);
             return true;
         }
 
