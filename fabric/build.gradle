@@ -55,6 +55,7 @@ dependencies {
 
     // Mod Menu integration for Fabric users
     compileOnly "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
+    runtimeOnly "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
 }
 
 // Process resources and expand version placeholders
