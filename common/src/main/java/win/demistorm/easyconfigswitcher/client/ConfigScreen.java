@@ -83,7 +83,7 @@ public final class ConfigScreen {
                             btn -> {
                                 ModConfig.setTitleLabel(titleLabelEdit.getValue().trim());
                                 ModConfig.save();
-                                client.setScreen(parent);
+                                client.gui.setScreen(parent);
                             })
                     .bounds(width / 2 + 10, height - 30, 140, WIDGET_HEIGHT)
                     .build();
@@ -122,7 +122,7 @@ public final class ConfigScreen {
             if (titleLabelEdit.isFocused() && (keyEvent.key() == 257 || keyEvent.key() == 335)) {
                 ModConfig.setTitleLabel(titleLabelEdit.getValue().trim());
                 ModConfig.save();
-                client.setScreen(parent);
+                client.gui.setScreen(parent);
                 return true;
             }
             return super.keyPressed(keyEvent);
@@ -198,7 +198,7 @@ public final class ConfigScreen {
 
                     this.editTooltipButton = Button.builder(
                                     Component.literal("Tooltip"),
-                                    btn -> client.setScreen(new TooltipEditScreen(EasyConfigSwitcherConfigScreen.this, preset)))
+                                    btn -> client.gui.setScreen(new TooltipEditScreen(EasyConfigSwitcherConfigScreen.this, preset)))
                             .bounds(0, 0, 50, WIDGET_HEIGHT)
                             .tooltip(Tooltip.create(Component.literal("Edit custom tooltip text")))
                             .build();
