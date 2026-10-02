@@ -92,7 +92,7 @@ shadowJar {
     from(zipTree(jar.archiveFile))
     configurations = [project.configurations.shadowCommon, project.configurations.shadowLib]
     relocate "com.github.difflib", "win.demistorm.easyconfigswitcher.shadow.difflib"
-    archiveClassifier = "dev-shadow"
+    archiveClassifier = null
 }
 
 // Configure sources JAR to include common module sources
