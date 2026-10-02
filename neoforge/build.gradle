@@ -22,10 +22,11 @@ configurations {
     // Common module configuration
     common
     shadowCommon
+    shadowLib
 
     // Build configuration inheritance
-    compileClasspath.extendsFrom common
-    runtimeClasspath.extendsFrom common
+    compileClasspath.extendsFrom common, shadowLib
+    runtimeClasspath.extendsFrom common, shadowLib
     developmentNeoForge.extendsFrom common
 }
 
@@ -43,6 +44,9 @@ dependencies {
     // Include the common module with all shared logic
     common(project(path: ':common')) { transitive = false }
     shadowCommon(project(path: ':common', configuration: 'transformProductionNeoForge')) { transitive = false }
+
+    // Diff engine bundled into the jar
+    shadowLib "io.github.java-diff-utils:java-diff-utils:4.15"
 }
 
 // Process resources and expand version placeholders
@@ -70,8 +74,9 @@ shadowJar {
     exclude "architectury.common.json"
     mainSpec.sourcePaths.clear()
     from(zipTree(jar.archiveFile))
-    configurations = [project.configurations.shadowCommon]
-    archiveClassifier = null
+    configurations = [project.configurations.shadowCommon, project.configurations.shadowLib]
+    relocate "com.github.difflib", "win.demistorm.easyconfigswitcher.shadow.difflib"
+    archiveClassifier = "dev-shadow"
 }
 
 // Configure sources JAR to include common module sources
