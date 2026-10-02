@@ -7,13 +7,16 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import win.demistorm.easyconfigswitcher.EasyConfigSwitcher;
 import win.demistorm.easyconfigswitcher.PresetManager;
+import win.demistorm.easyconfigswitcher.PresetStore;
 import win.demistorm.easyconfigswitcher.config.ModConfig;
 import win.demistorm.easyconfigswitcher.config.Preset;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +35,9 @@ public final class ConfigScreen {
         private Button createPresetButton;
         private PresetListWidget presetList;
         private EditBox titleLabelEdit;
+        private String statusMessage = null;
+        private long statusUntil = 0;
+        private static final Path GAME = Path.of("");
 
         private static final int WIDGET_HEIGHT = 20;
         private static final int ENTRY_HEIGHT = 24;
@@ -106,12 +112,18 @@ public final class ConfigScreen {
 
             String result = PresetManager.createPreset(name);
             EasyConfigSwitcher.LOGGER.info(result);
+            setStatus(result);
 
             if (result.contains("successfully")) {
                 newPresetNameEdit.setValue("");
                 updateCreateButton();
                 presetList.updateEntries();
             }
+        }
+
+        void setStatus(String message) {
+            statusMessage = message;
+            statusUntil = System.currentTimeMillis() + 6000;
         }
 
         @Override
@@ -140,9 +152,19 @@ public final class ConfigScreen {
 
             context.drawString(font, "Title Screen Label:", width / 2 - 200, height - 42, 0xFFAAAAAA);
 
+            if (statusMessage != null && System.currentTimeMillis() < statusUntil) {
+                context.drawCenteredString(font, statusMessage, width / 2, 26, 0xFFFFFF55);
+            } else {
+                statusMessage = null;
+            }
+
             if (presetList != null) {
-                context.drawString(font, "Presets (" + presetList.children().size() + "/" + PresetManager.getMaxPresets() + ")",
-                        width / 2 - 200, presetList.getY() - 15, 0xFFFFFFFF);
+                String header = "Presets (" + presetList.children().size() + "/" + PresetManager.getMaxPresets() + ")";
+                String baseName = ModConfig.getBasePresetName();
+                if (baseName != null) {
+                    header += " · Base: " + baseName;
+                }
+                context.drawString(font, header, width / 2 - 200, presetList.getY() - 15, 0xFFFFFFFF);
                 presetList.render(context, mouseX, mouseY, delta);
             }
         }
@@ -179,14 +201,34 @@ public final class ConfigScreen {
 
             public class PresetEntry extends ObjectSelectionList.Entry<PresetEntry> {
                 final Preset preset;
+                private final Button baseButton;
                 private final Button moveUpButton;
                 private final Button moveDownButton;
                 private final Button editTooltipButton;
                 private final Button applyAndRestartButton;
+                private final Button updateButton;
                 private final Button deleteButton;
 
                 PresetEntry(Preset preset) {
                     this.preset = preset;
+
+                    boolean isBase = PresetManager.isBase(preset.getName());
+
+                    String baseTooltip;
+                    if (isBase) {
+                        baseTooltip = "Base Preset (all other packs inherit base values from here)";
+                    } else {
+                        String summary = PresetStore.describeDelta(GAME, preset.getName());
+                        baseTooltip = (summary != null ? summary + "\n" : "") + "Click to make this the base preset";
+                    }
+
+                    this.baseButton = Button.builder(
+                                    Component.literal(isBase ? "★" : "☆"),
+                                    btn -> confirmSetBase())
+                            .bounds(0, 0, 20, WIDGET_HEIGHT)
+                            .tooltip(Tooltip.create(Component.literal(baseTooltip)))
+                            .build();
+                    this.baseButton.active = !isBase;
 
                     this.moveUpButton = Button.builder(
                                     Component.literal("↑"),
@@ -210,7 +252,7 @@ public final class ConfigScreen {
                             .build();
 
                     this.applyAndRestartButton = Button.builder(
-                                    Component.literal("Apply and restart"),
+                                    Component.literal("Apply"),
                                     btn -> {
                                         String result = PresetManager.applyOnRestart(preset.getName());
                                         if (result.startsWith("SHUTDOWN:")) {
@@ -219,8 +261,23 @@ public final class ConfigScreen {
                                             client.stop();
                                         }
                                     })
-                            .bounds(0, 0, 100, WIDGET_HEIGHT)
+                            .bounds(0, 0, 55, WIDGET_HEIGHT)
                             .tooltip(Tooltip.create(Component.literal("Apply preset on next game start and restart")))
+                            .build();
+
+                    String updateTooltip = isBase
+                            ? "Commit your current session changes to the base preset (changes will be inherited on other presets unless overriden already)"
+                            : "Commit your current session changes to this preset";
+                    this.updateButton = Button.builder(
+                                    Component.literal("✎"),
+                                    btn -> {
+                                        String result = PresetManager.updatePreset(preset.getName());
+                                        EasyConfigSwitcher.LOGGER.info(result);
+                                        setStatus(result);
+                                        presetList.updateEntries();
+                                    })
+                            .bounds(0, 0, 20, WIDGET_HEIGHT)
+                            .tooltip(Tooltip.create(Component.literal(updateTooltip)))
                             .build();
 
                     this.deleteButton = Button.builder(
@@ -228,11 +285,25 @@ public final class ConfigScreen {
                                     btn -> {
                                         String result = PresetManager.deletePreset(preset.getName());
                                         EasyConfigSwitcher.LOGGER.info(result);
+                                        setStatus(result);
                                         presetList.updateEntries();
                                     })
                             .bounds(0, 0, 60, WIDGET_HEIGHT)
                             .tooltip(Tooltip.create(Component.literal("Delete this preset")))
                             .build();
+                }
+
+                private void confirmSetBase() {
+                    String name = preset.getName();
+                    client.setScreen(new ConfirmScreen(confirmed -> {
+                        if (confirmed) {
+                            String result = PresetManager.setBase(name);
+                            EasyConfigSwitcher.LOGGER.info(result);
+                            setStatus(result);
+                        }
+                        client.setScreen(EasyConfigSwitcherConfigScreen.this);
+                    }, Component.literal("Set Base Preset"),
+                            Component.literal("Make '" + name + "' the base preset? All other presets will inherit from it, keeping only their current differences.")));
                 }
 
                 private void moveEntry(int direction) {
@@ -266,11 +337,14 @@ public final class ConfigScreen {
                     int buttonX = x + 5;
                     int buttonY = y + (entryHeight - WIDGET_HEIGHT) / 2;
 
-                    moveUpButton.setPosition(buttonX, buttonY);
+                    baseButton.setPosition(buttonX, buttonY);
+                    baseButton.render(context, mouseX, mouseY, tickDelta);
+
+                    moveUpButton.setPosition(buttonX + 22, buttonY);
                     moveUpButton.active = currentIndex > 0;
                     moveUpButton.render(context, mouseX, mouseY, tickDelta);
 
-                    moveDownButton.setPosition(buttonX + 22, buttonY);
+                    moveDownButton.setPosition(buttonX + 44, buttonY);
                     moveDownButton.active = currentIndex < entries.size() - 1;
                     moveDownButton.render(context, mouseX, mouseY, tickDelta);
 
@@ -280,7 +354,7 @@ public final class ConfigScreen {
                     if (isCurrent) {
                         displayName += " ✓";
                     }
-                    context.drawString(font, displayName, x + 55, y + (entryHeight - 9) / 2, nameColor);
+                    context.drawString(font, displayName, x + 70, y + (entryHeight - 9) / 2, nameColor);
 
                     int rightButtonY = y + (entryHeight - WIDGET_HEIGHT) / 2;
 
@@ -288,7 +362,11 @@ public final class ConfigScreen {
                     deleteButton.setPosition(deleteX, rightButtonY);
                     deleteButton.render(context, mouseX, mouseY, tickDelta);
 
-                    int restartX = deleteX - 105;
+                    int updateX = deleteX - 25;
+                    updateButton.setPosition(updateX, rightButtonY);
+                    updateButton.render(context, mouseX, mouseY, tickDelta);
+
+                    int restartX = updateX - 60;
                     applyAndRestartButton.setPosition(restartX, rightButtonY);
                     applyAndRestartButton.render(context, mouseX, mouseY, tickDelta);
 
@@ -299,10 +377,12 @@ public final class ConfigScreen {
 
                 @Override
                 public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                    if (baseButton.mouseClicked(mouseX, mouseY, button)) return true;
                     if (moveUpButton.mouseClicked(mouseX, mouseY, button)) return true;
                     if (moveDownButton.mouseClicked(mouseX, mouseY, button)) return true;
                     if (editTooltipButton.mouseClicked(mouseX, mouseY, button)) return true;
                     if (applyAndRestartButton.mouseClicked(mouseX, mouseY, button)) return true;
+                    if (updateButton.mouseClicked(mouseX, mouseY, button)) return true;
                     return deleteButton.mouseClicked(mouseX, mouseY, button);
                 }
 

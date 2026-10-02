@@ -16,6 +16,7 @@ public final class ModConfig {
         public List<Preset> presets = new ArrayList<>();
         public String pendingPreset = null;
         public String currentPreset = null;
+        public String basePreset = null;
         public String titleLabel = "Easy Config Switcher";
     }
 
@@ -74,6 +75,7 @@ public final class ModConfig {
         INSTANCE.presets.addAll(from.presets);
         INSTANCE.pendingPreset = from.pendingPreset;
         INSTANCE.currentPreset = from.currentPreset;
+        INSTANCE.basePreset = from.basePreset;
         INSTANCE.titleLabel = from.titleLabel != null && !from.titleLabel.isEmpty() ? from.titleLabel : "Easy Config Switcher";
     }
 
@@ -89,6 +91,19 @@ public final class ModConfig {
 
     public static String getCurrentPreset() {
         return INSTANCE.currentPreset;
+    }
+
+    public static String getBasePresetName() {
+        String base = INSTANCE.basePreset;
+        if (base == null || base.isEmpty()) {
+            return null;
+        }
+        return base;
+    }
+
+    public static void setBasePresetName(String presetName) {
+        INSTANCE.basePreset = (presetName == null || presetName.isEmpty()) ? null : presetName;
+        save();
     }
 
     public static void setCurrentPreset(String presetName) {

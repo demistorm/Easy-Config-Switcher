@@ -49,21 +49,24 @@ public final class ConfigBackupManager {
     }
 
     public static boolean restorePreset(String presetName) {
-        Path presetDir = PRESETS_DIR.resolve(presetName);
-        if (!Files.exists(presetDir)) {
-            LOGGER.error("Cannot restore preset '{}' - preset directory does not exist", presetName);
+        return restoreFrom(PRESETS_DIR.resolve(presetName));
+    }
+
+    public static boolean restoreFrom(Path sourceDir) {
+        if (!Files.exists(sourceDir)) {
+            LOGGER.error("Cannot restore preset - source directory does not exist: {}", sourceDir);
             return false;
         }
 
         try {
-            LOGGER.info("Restoring preset: {}", presetName);
+            LOGGER.info("Restoring preset from: {}", sourceDir);
 
-            Path presetOptionsFile = presetDir.resolve("options.txt");
+            Path presetOptionsFile = sourceDir.resolve("options.txt");
             if (Files.exists(presetOptionsFile)) {
                 copyFile(presetOptionsFile, OPTIONS_FILE);
             }
 
-            Path presetConfigDir = presetDir.resolve("config");
+            Path presetConfigDir = sourceDir.resolve("config");
             if (Files.exists(presetConfigDir)) {
                 if (!Files.exists(CONFIG_DIR)) {
                     Files.createDirectories(CONFIG_DIR);
@@ -72,15 +75,15 @@ public final class ConfigBackupManager {
                 copyDirectory(presetConfigDir, CONFIG_DIR);
             }
 
-            Path presetShaderDir = presetDir.resolve("shaderpacks");
+            Path presetShaderDir = sourceDir.resolve("shaderpacks");
             if (Files.exists(presetShaderDir)) {
                 restoreShaderSettings(presetShaderDir);
             }
 
-            LOGGER.info("Preset restored successfully: {}", presetName);
+            LOGGER.info("Preset restored successfully from: {}", sourceDir);
             return true;
         } catch (IOException e) {
-            LOGGER.error("Failed to restore preset: {}", presetName, e);
+            LOGGER.error("Failed to restore preset from: {}", sourceDir, e);
             return false;
         }
     }

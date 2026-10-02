@@ -3,6 +3,8 @@ package win.demistorm.easyconfigswitcher;
 import win.demistorm.easyconfigswitcher.config.ModConfig;
 import win.demistorm.easyconfigswitcher.config.Preset;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -12,6 +14,7 @@ public final class PresetManager {
 
     private static final int MAX_PRESETS = 10;
     private static final int MAX_NAME_LENGTH = 15;
+    private static final Path GAME = Path.of("");
 
     private PresetManager() {
     }
@@ -34,19 +37,136 @@ public final class PresetManager {
             return "Maximum number of presets (" + MAX_PRESETS + ") reached";
         }
 
-        int order = ModConfig.INSTANCE.presets.size();
+        boolean firstEver = ModConfig.INSTANCE.presets.isEmpty();
+        String baseName = ModConfig.getBasePresetName();
+        boolean baseAvailable = baseName != null && ConfigBackupManager.presetExists(baseName);
 
-        Preset preset = new Preset(name, order);
+        Preset preset = new Preset(name, ModConfig.INSTANCE.presets.size());
 
-        if (!ConfigBackupManager.backupPreset(name)) {
+        try {
+            if (firstEver || !baseAvailable) {
+                PresetStore.captureFullTo(GAME, PresetStore.presetDir(GAME, name));
+            } else {
+                PresetStore.captureDerivedFromLive(GAME, name, baseName);
+            }
+        } catch (IOException e) {
+            EasyConfigSwitcher.LOGGER.error("Failed to create preset '{}'", name, e);
             return "Failed to create preset backup";
         }
 
         ModConfig.INSTANCE.presets.add(preset);
+        if (firstEver) {
+            ModConfig.setBasePresetName(name);
+        }
         ModConfig.save();
 
-        EasyConfigSwitcher.LOGGER.info("Created preset: {}", name);
-        return "Preset '" + name + "' created successfully";
+        boolean isBase = name.equals(ModConfig.getBasePresetName());
+        EasyConfigSwitcher.LOGGER.info("Created preset '{}'{}", name, isBase ? " (base)" : "");
+        return "Preset '" + name + "' created successfully" + (isBase ? " (Base: others will inherit from it)" : "");
+    }
+
+    public static String setBase(String name) {
+        if (getPreset(name).isEmpty()) {
+            return "Preset not found: " + name;
+        }
+        if (name.equals(ModConfig.getBasePresetName())) {
+            return "'" + name + "' is already the base preset";
+        }
+
+        List<String> others = new ArrayList<>();
+        for (Preset preset : ModConfig.INSTANCE.presets) {
+            if (!preset.getName().equals(name)) {
+                others.add(preset.getName());
+            }
+        }
+
+        try {
+            PresetStore.promoteToBase(GAME, name, others);
+        } catch (IOException e) {
+            EasyConfigSwitcher.LOGGER.error("Failed to set '{}' as base preset", name, e);
+            return "Failed to set base preset";
+        }
+
+        ModConfig.setBasePresetName(name);
+        EasyConfigSwitcher.LOGGER.info("Set '{}' as base preset, {} presets now derive from it", name, others.size());
+        return "Preset '" + name + "' is now the base successfully (" + others.size() + " preset" + (others.size() == 1 ? "" : "s") + " inherit from it)";
+    }
+
+    public static String updatePreset(String name) {
+        Optional<Preset> presetOpt = getPreset(name);
+        if (presetOpt.isEmpty()) {
+            return "Preset not found: " + name;
+        }
+        if (!ConfigBackupManager.presetExists(name)) {
+            return "Preset backup not found: " + name;
+        }
+
+        String baseName = ModConfig.getBasePresetName();
+        boolean isBase = name.equals(baseName);
+        boolean isDerived = !isBase && PresetStore.isDerived(GAME, name);
+
+        if (!isBase && !isDerived) {
+            try {
+                PresetStore.captureFullTo(GAME, PresetStore.presetDir(GAME, name));
+            } catch (IOException e) {
+                EasyConfigSwitcher.LOGGER.error("Failed to update preset '{}'", name, e);
+                return "Failed to update preset";
+            }
+            return "Preset '" + name + "' updated successfully (full recapture)";
+        }
+
+        Path referenceDir = null;
+        Path targetDir = null;
+        String current = ModConfig.getCurrentPreset();
+        if (current != null && ConfigBackupManager.presetExists(current)) {
+            try {
+                referenceDir = PresetStore.stagingDir(GAME).resolve("ref");
+                PresetStore.applyTo(GAME, current, referenceDir);
+            } catch (IOException e) {
+                EasyConfigSwitcher.LOGGER.error("Failed to stage current preset '{}' for update", current, e);
+                referenceDir = null;
+            }
+        }
+        if (isDerived && !name.equals(current)) {
+            try {
+                targetDir = PresetStore.stagingDir(GAME).resolve("ref-target");
+                PresetStore.applyTo(GAME, name, targetDir);
+            } catch (IOException e) {
+                EasyConfigSwitcher.LOGGER.error("Failed to stage target preset '{}' for update", name, e);
+                targetDir = null;
+            }
+        }
+
+        try {
+            PresetStore.ChangeSet changes = PresetStore.computeSessionChanges(GAME, referenceDir);
+            if (changes.isEmpty()) {
+                return "No changes detected for preset '" + name + "'";
+            }
+
+            if (isBase) {
+                PresetStore.updateBase(GAME, name, changes);
+                for (Preset preset : ModConfig.INSTANCE.presets) {
+                    if (!preset.getName().equals(name) && PresetStore.isDerived(GAME, preset.getName())) {
+                        PresetStore.pruneRedundantOverrides(GAME, preset.getName());
+                    }
+                }
+            } else {
+                PresetStore.updateDerived(GAME, name, changes, referenceDir, targetDir);
+            }
+
+            if (referenceDir != null) {
+                PresetStore.deleteTreeQuietly(referenceDir);
+            }
+            if (targetDir != null) {
+                PresetStore.deleteTreeQuietly(targetDir);
+            }
+
+            EasyConfigSwitcher.LOGGER.info("Updated preset '{}': {}", name, changes.summary());
+            return "Preset '" + name + "' updated successfully (" + changes.summary() + ")";
+        } catch (IOException e) {
+            EasyConfigSwitcher.LOGGER.error("Failed to update preset '{}'", name, e);
+            return "Failed to update preset";
+        }
     }
 
     public static String deletePreset(String name) {
@@ -55,10 +175,27 @@ public final class PresetManager {
             return "Preset not found: " + name;
         }
 
-        Preset preset = presetOpt.get();
+        if (name.equals(ModConfig.getBasePresetName())) {
+            List<String> others = new ArrayList<>();
+            for (Preset preset : ModConfig.INSTANCE.presets) {
+                if (!preset.getName().equals(name)) {
+                    others.add(preset.getName());
+                }
+            }
+            if (!others.isEmpty()) {
+                try {
+                    PresetStore.demoteBase(GAME, others);
+                } catch (IOException e) {
+                    EasyConfigSwitcher.LOGGER.error("Failed to convert derived presets to standalone while deleting base '{}'", name, e);
+                    return "Failed to delete base preset";
+                }
+            }
+            ModConfig.setBasePresetName(null);
+        }
 
         ConfigBackupManager.deletePreset(name);
 
+        Preset preset = presetOpt.get();
         ModConfig.INSTANCE.presets.remove(preset);
         reorderPresetsAfterDelete(preset.getOrder());
         ModConfig.save();
@@ -113,6 +250,10 @@ public final class PresetManager {
         return ModConfig.INSTANCE.presets.stream()
                 .filter(p -> p.getName().equals(name))
                 .findFirst();
+    }
+
+    public static boolean isBase(String name) {
+        return name != null && name.equals(ModConfig.getBasePresetName());
     }
 
     public static int getMaxPresets() {
