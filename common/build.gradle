@@ -19,6 +19,17 @@ loom {
 
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+
+    // Diff engine for preset delta merges (bundled via shadowlib in loader modules)
+    compileOnly "io.github.java-diff-utils:java-diff-utils:4.15"
+
+    testImplementation "io.github.java-diff-utils:java-diff-utils:4.15"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
+}
+
+test {
+    useJUnitPlatform()
 }
 
 // Publishing configuration for the common module

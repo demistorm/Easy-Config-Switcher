@@ -28,6 +28,9 @@ subprojects {
         // Local Maven repository
         mavenLocal()
 
+        // For java-diff-utils and JUnit
+        mavenCentral()
+
         // Mod Menu API for configuration screens
         maven {
             name = "Terraformers"
