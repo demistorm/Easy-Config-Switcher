@@ -1,5 +1,6 @@
 package win.demistorm.easyconfigswitcher.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -189,46 +190,46 @@ public class MultiLineEditBox extends EditBox {
         }
 
         switch (keyEvent.key()) {
-            case 257:
-            case 335:
+            case InputConstants.KEY_RETURN:
+            case InputConstants.KEY_NUMPADENTER:
                 if (canConsumeInputImpl()) {
                     insertNewline();
                 }
                 return true;
 
-            case 262:
+            case InputConstants.KEY_RIGHT:
                 moveCursorHorizontal(1);
                 return true;
 
-            case 263:
+            case InputConstants.KEY_LEFT:
                 moveCursorHorizontal(-1);
                 return true;
 
-            case 264:
+            case InputConstants.KEY_DOWN:
                 moveCursorDown();
                 return true;
 
-            case 265:
+            case InputConstants.KEY_UP:
                 moveCursorUp();
                 return true;
 
-            case 268:
+            case InputConstants.KEY_HOME:
                 cursorColumn = 0;
                 resetHighlight();
                 return true;
 
-            case 269:
+            case InputConstants.KEY_END:
                 cursorColumn = getCurrentLineText().length();
                 resetHighlight();
                 return true;
 
-            case 259:
+            case InputConstants.KEY_BACKSPACE:
                 if (canConsumeInputImpl()) {
                     handleBackspace();
                 }
                 return true;
 
-            case 261:
+            case InputConstants.KEY_DELETE:
                 if (canConsumeInputImpl()) {
                     handleDelete();
                 }

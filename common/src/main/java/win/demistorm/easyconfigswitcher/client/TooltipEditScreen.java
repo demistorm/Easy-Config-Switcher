@@ -1,5 +1,6 @@
 package win.demistorm.easyconfigswitcher.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -117,7 +118,7 @@ public class TooltipEditScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (keyEvent.key() == 256) {
+        if (keyEvent.key() == InputConstants.KEY_ESCAPE) {
             client.gui.setScreen(parent);
             return true;
         }

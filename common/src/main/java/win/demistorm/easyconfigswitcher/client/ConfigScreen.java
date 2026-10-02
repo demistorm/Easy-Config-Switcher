@@ -1,5 +1,6 @@
 package win.demistorm.easyconfigswitcher.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -127,11 +128,11 @@ public final class ConfigScreen {
 
         @Override
         public boolean keyPressed(KeyEvent keyEvent) {
-            if (newPresetNameEdit.isFocused() && (keyEvent.key() == 257 || keyEvent.key() == 335)) {
+            if (newPresetNameEdit.isFocused() && (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER)) {
                 createNewPreset();
                 return true;
             }
-            if (titleLabelEdit.isFocused() && (keyEvent.key() == 257 || keyEvent.key() == 335)) {
+            if (titleLabelEdit.isFocused() && (keyEvent.key() == InputConstants.KEY_RETURN || keyEvent.key() == InputConstants.KEY_NUMPADENTER)) {
                 ModConfig.setTitleLabel(titleLabelEdit.getValue().trim());
                 ModConfig.save();
                 client.gui.setScreen(parent);
