@@ -31,10 +31,11 @@ configurations {
     // Common module configuration
     common
     shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this
+    shadowLib // External libraries bundled into the final jar
 
     // Build configuration inheritance
-    compileClasspath.extendsFrom common
-    runtimeClasspath.extendsFrom common
+    compileClasspath.extendsFrom common, shadowLib
+    runtimeClasspath.extendsFrom common, shadowLib
     developmentFabric.extendsFrom common
 }
 
@@ -55,6 +56,9 @@ dependencies {
 
     // Mod Menu integration for Fabric users
     modCompileOnly "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
+
+    // Diff engine bundled into the jar
+    shadowLib "io.github.java-diff-utils:java-diff-utils:4.15"
 }
 
 // Process resources and expand version placeholders
@@ -74,10 +78,11 @@ processResources {
     }
 }
 
-// Configure shadow JAR for including common module
+// Configure shadow JAR for including common module and difflib
 shadowJar {
     exclude "architectury.common.json"
-    configurations = [project.configurations.shadowCommon]
+    configurations = [project.configurations.shadowCommon, project.configurations.shadowLib]
+    relocate "com.github.difflib", "win.demistorm.easyconfigswitcher.shadow.difflib"
     archiveClassifier = "dev-shadow"
 }
 
