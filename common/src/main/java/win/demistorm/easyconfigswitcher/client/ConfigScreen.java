@@ -149,7 +149,7 @@ public final class ConfigScreen {
             context.text(font, "Title Screen Label:", width / 2 - 200, height - 42, 0xFFAAAAAA);
 
             if (statusMessage != null && System.currentTimeMillis() < statusUntil) {
-                context.drawCenteredString(font, statusMessage, width / 2, 26, 0xFFFFFF55);
+                context.centeredText(font, statusMessage, width / 2, 26, 0xFFFFFF55);
             } else {
                 statusMessage = null;
             }
@@ -332,7 +332,7 @@ public final class ConfigScreen {
                     int buttonY = y + (entryHeight - WIDGET_HEIGHT) / 2;
 
                     baseButton.setPosition(buttonX, buttonY);
-                    baseButton.render(context, mouseX, mouseY, tickDelta);
+                    baseButton.extractRenderState(context, mouseX, mouseY, tickDelta);
 
                     moveUpButton.setPosition(buttonX + 22, buttonY);
                     moveUpButton.active = currentIndex > 0;
@@ -348,7 +348,7 @@ public final class ConfigScreen {
                     if (isCurrent) {
                         displayName += " ✓";
                     }
-                    context.text(font, displayName, x + 55, y + (entryHeight - 9) / 2, nameColor);
+                    context.text(font, displayName, x + 70, y + (entryHeight - 9) / 2, nameColor);
 
                     int rightButtonY = y + (entryHeight - WIDGET_HEIGHT) / 2;
 
@@ -358,7 +358,7 @@ public final class ConfigScreen {
 
                     int updateX = deleteX - 25;
                     updateButton.setPosition(updateX, rightButtonY);
-                    updateButton.render(context, mouseX, mouseY, tickDelta);
+                    updateButton.extractRenderState(context, mouseX, mouseY, tickDelta);
 
                     int restartX = updateX - 60;
                     applyAndRestartButton.setPosition(restartX, rightButtonY);
