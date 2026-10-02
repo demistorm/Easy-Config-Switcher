@@ -289,13 +289,13 @@ public final class ConfigScreen {
 
                 private void confirmSetBase() {
                     String name = preset.getName();
-                    client.setScreen(new ConfirmScreen(confirmed -> {
+                    client.gui.setScreen(new ConfirmScreen(confirmed -> {
                         if (confirmed) {
                             String result = PresetManager.setBase(name);
                             EasyConfigSwitcher.LOGGER.info(result);
                             setStatus(result);
                         }
-                        client.setScreen(EasyConfigSwitcherConfigScreen.this);
+                        client.gui.setScreen(EasyConfigSwitcherConfigScreen.this);
                     }, Component.literal("Set Base Preset"),
                             Component.literal("Make '" + name + "' the base preset? All other presets will inherit from it, keeping only their current differences.")));
                 }
