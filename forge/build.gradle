@@ -34,10 +34,11 @@ configurations {
     // Common module configuration
     common
     shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this
+    shadowLib // External libraries bundled into the final jar
 
     // Build configuration inheritance
-    compileClasspath.extendsFrom common
-    runtimeClasspath.extendsFrom common
+    compileClasspath.extendsFrom common, shadowLib
+    runtimeClasspath.extendsFrom common, shadowLib
     developmentForge.extendsFrom common
 }
 
@@ -48,6 +49,9 @@ dependencies {
     // Include the common module with all our shared logic
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
+
+    // Diff engine bundled into the jar
+    shadowLib "io.github.java-diff-utils:java-diff-utils:4.15"
 }
 
 // Process resources and expand version placeholders
@@ -66,7 +70,8 @@ processResources {
 // Configure shadow JAR for including common module
 shadowJar {
     exclude "architectury.common.json"
-    configurations = [project.configurations.shadowCommon]
+    configurations = [project.configurations.shadowCommon, project.configurations.shadowLib]
+    relocate "com.github.difflib", "win.demistorm.easyconfigswitcher.shadow.difflib"
     archiveClassifier = "dev-shadow"
 }
 
